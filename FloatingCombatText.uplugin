@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Floating Combat Text",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Vnep",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "FloatingCombatText",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
