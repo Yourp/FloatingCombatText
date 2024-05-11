@@ -6,6 +6,7 @@
 #include "Curves/CurveVector.h"
 #include "Curves/CurveLinearColor.h"
 #include "Engine/Font.h"
+#include "Runtime/Engine/Classes/GameFramework/HUD.h"
 
 // Sets default values for this component's properties
 UFCTManagerComponent::UFCTManagerComponent()
@@ -24,14 +25,10 @@ bool UFCTManagerComponent::IsFloatingCombatTextExpired(FFCTData const& CombatTex
 
 void UFCTManagerComponent::DrawFloatingCombatText(FFCTData const& CombatText, UCanvas* Canvas)
 {
-	FFloatingCombatTextAnimationTemplate const& AnimTemplate = AnimationTemplates[CombatText.GetTemplateIndex()];
-
+	const FFloatingCombatTextAnimationTemplate& AnimTemplate = AnimationTemplates[CombatText.GetTemplateIndex()];
 	const UCurveVector* PositionCurve = AnimTemplate.PositionAnimationCurve;
-	const UCurveLinearColor* ColorCurve = AnimTemplate.ColorAnimationCurve;
-	const UCurveFloat* TextSizeCurve = AnimTemplate.TextSizeAnimationCurve;
-	const UFont* CombatTextFont = AnimTemplate.CombatTextFont;
 
-	if (!PositionCurve || !ColorCurve || !TextSizeCurve || !CombatTextFont)
+	if (!PositionCurve)
 	{
 		return;
 	}
@@ -45,6 +42,15 @@ void UFCTManagerComponent::DrawFloatingCombatText(FFCTData const& CombatText, UC
 	if (!Location2D.Z)
 	{
 		/** We don't need to draw, if number is behind the screen. */
+		return;
+	}
+
+	const UCurveLinearColor* ColorCurve = AnimTemplate.ColorAnimationCurve;
+	const UCurveFloat* TextSizeCurve = AnimTemplate.TextSizeAnimationCurve;
+	const UFont* CombatTextFont = AnimTemplate.CombatTextFont;
+
+	if (!ColorCurve || !TextSizeCurve || !CombatTextFont)
+	{
 		return;
 	}
 
@@ -86,8 +92,7 @@ void UFCTManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	AHUD::OnHUDPostRender.AddUFunction(this, "DrawAll");
 }
 
 // Called every frame
@@ -95,7 +100,22 @@ void UFCTManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	Update(DeltaTime);
+
+	if (bSimulationEnabled)
+	{
+		for (int Index = 0; Index < NewElementsInTick; Index++)
+		{
+			const int32 Number = FMath::RandRange(SimNumberRange.X, SimNumberRange.Y);
+			FBox Box;
+			Box.Min = MinPosition;
+			Box.Max = MaxPosition;
+
+			CreateFloatingCombatText(Number, FMath::RandPointInBox(Box), FMath::RandRange(0, AnimationTemplates.Num() - 1));
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Green, FString::Printf(TEXT("AllFloatingCombatTexts size: %u"), AllFloatingCombatTexts.Num()));
+	}
 }
 
 void UFCTManagerComponent::Update(float Delta)
@@ -115,7 +135,7 @@ void UFCTManagerComponent::Update(float Delta)
 	}
 }
 
-void UFCTManagerComponent::DrawAll(UCanvas* Canvas)
+void UFCTManagerComponent::DrawAll(AHUD* HUD, UCanvas* Canvas)
 {
 	for (FFCTData const& CurrentFCT : AllFloatingCombatTexts)
 	{
